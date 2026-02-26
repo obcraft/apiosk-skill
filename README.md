@@ -1,6 +1,6 @@
 # Apiosk AgentSkill
 
-**Keyless API access with USDC micropayments for OpenClaw agents.**
+**Keyless API access with USDC micropayments for OpenClaw agents and `skills.sh` agents.**
 
 Pay-per-request for production APIs. No API keys. No accounts. Just pay and call.
 
@@ -9,6 +9,9 @@ Pay-per-request for production APIs. No API keys. No accounts. Just pay and call
 ## 🚀 Quick Start
 
 ```bash
+# Install via Vercel skills.sh (from GitHub repo)
+npx skills add obcraft/apiosk-skill --skill apiosk-gateway
+
 # Install via ClawHub
 clawhub install apiosk
 
@@ -25,6 +28,10 @@ cd ~/.openclaw/skills/apiosk
 # List available APIs
 ./list-apis.sh
 
+# List by group (new listing groups)
+./list-apis.sh --type datasets
+./list-apis.sh --type compute
+
 # Call an API
 ./call-api.sh weather --params '{"city": "Amsterdam"}'
 ```
@@ -35,10 +42,12 @@ cd ~/.openclaw/skills/apiosk
 
 See [SKILL.md](./SKILL.md) for complete documentation:
 - Configuration
-- Available APIs
+- Available APIs and listing groups (`api`, `datasets`, `compute`)
 - Usage examples (Node.js, Python, bash)
 - Helper scripts
 - Troubleshooting
+
+For automatic 402 payment handling, use an x402 SDK client (`x402-fetch` / `x402-axios`) or a custom EIP-3009 payment signer.
 
 ---
 

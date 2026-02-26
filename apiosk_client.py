@@ -1,6 +1,6 @@
 """
 Apiosk Python Client
-Easy API calls with automatic x402 payment
+Easy API calls with x402 challenge handling
 """
 
 import os
@@ -39,7 +39,7 @@ def call_apiosk(api_id: str, params: dict = None) -> dict:
     
     Raises:
         requests.HTTPError: If API call fails
-        ValueError: If payment fails
+        ValueError: If payment proof is required (HTTP 402)
     """
     wallet, config = load_wallet()
     params = params or {}
@@ -56,7 +56,7 @@ def call_apiosk(api_id: str, params: dict = None) -> dict:
         return response.json()
     elif response.status_code == 402:
         error = response.json().get('error', 'Insufficient balance')
-        raise ValueError(f'Payment required: {error}')
+        raise ValueError(f'Payment required (x402): {error}. Attach payment proof and retry.')
     else:
         response.raise_for_status()
 

@@ -1,6 +1,6 @@
 /**
  * Apiosk Node.js Client
- * Easy API calls with automatic x402 payment
+ * Easy API calls with x402 challenge handling
  */
 
 const fs = require('fs');
@@ -61,7 +61,7 @@ async function callApiosk(apiId, params = {}) {
           if (res.statusCode === 200) {
             resolve(response);
           } else if (res.statusCode === 402) {
-            reject(new Error(`Payment required: ${response.error || 'Insufficient balance'}`));
+            reject(new Error(`Payment required (x402): ${response.error || 'Attach payment proof and retry'}`));
           } else {
             reject(new Error(`API error (${res.statusCode}): ${response.error || body}`));
           }

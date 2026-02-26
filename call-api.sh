@@ -1,5 +1,5 @@
 #!/bin/bash
-# Call any Apiosk API with automatic x402 payment
+# Call any Apiosk API and surface x402 payment challenges
 # Usage: ./call-api.sh <api-id> --params '{"key":"value"}'
 
 set -e
@@ -31,7 +31,6 @@ if [ ! -f "$WALLET_FILE" ]; then
 fi
 
 WALLET_ADDRESS=$(jq -r '.address' "$WALLET_FILE")
-WALLET_KEY=$(jq -r '.private_key' "$WALLET_FILE")
 GATEWAY_URL=$(jq -r '.gateway_url' "$CONFIG_FILE")
 
 # Make request
@@ -51,9 +50,11 @@ if [ "$HTTP_CODE" == "200" ]; then
   echo ""
   echo "✅ Paid: \$$PRICE USDC"
 elif [ "$HTTP_CODE" == "402" ]; then
-  echo "❌ Payment required but failed"
+  echo "❌ Payment required (x402 challenge returned)"
   echo "$BODY" | jq
   echo ""
+  echo "This script does not sign x402 proofs."
+  echo "Use an x402 SDK client (x402-fetch/x402-axios) or custom EIP-3009 flow."
   echo "Check your USDC balance: ./check-balance.sh"
 elif [ "$HTTP_CODE" == "404" ]; then
   echo "❌ API not found: $API_ID"

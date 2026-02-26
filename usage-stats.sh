@@ -39,7 +39,7 @@ echo "$USAGE" | jq -r '"Total Requests: \(.total_requests)\nTotal Spent: $\(.tot
 
 echo ""
 echo "📈 By API:"
-echo "$USAGE" | jq -r '.by_api | to_entries[] | "\(.key):\t\(.value.requests) req\t$\(.value.spent) USDC"' | column -t -s $'\t'
+echo "$USAGE" | jq -r '.by_api | to_entries[] | "\(.key):\t\(.value.requests) req\t$\(.value.spent_usdc) USDC"' | column -t -s $'\t'
 
 echo ""
 echo "💡 Tip: Use --today, --week, or --month to filter"
