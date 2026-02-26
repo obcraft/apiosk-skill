@@ -1,56 +1,72 @@
 #!/bin/bash
-# Apiosk Wallet Setup - One-time configuration
+# Apiosk Wallet Setup - address-only configuration (no local signing key storage)
 
-set -e
+set -euo pipefail
 
 WALLET_DIR="$HOME/.apiosk"
-WALLET_FILE="$WALLET_DIR/wallet.json"
+WALLET_TXT="$WALLET_DIR/wallet.txt"
 CONFIG_FILE="$WALLET_DIR/config.json"
+FORCE="false"
+ADDRESS=""
 
-echo "🦞 Apiosk Wallet Setup"
+print_help() {
+  echo "Usage: ./setup-wallet.sh [OPTIONS]"
+  echo ""
+  echo "Options:"
+  echo "  --wallet ADDRESS   Wallet address to use (0x...)"
+  echo "  --force            Overwrite existing ~/.apiosk/wallet.txt"
+  echo "  --help             Show this help"
+}
+
+validate_wallet() {
+  [[ "$1" =~ ^0x[a-fA-F0-9]{40}$ ]]
+}
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --wallet)
+      ADDRESS="$2"
+      shift 2
+      ;;
+    --force)
+      FORCE="true"
+      shift
+      ;;
+    --help)
+      print_help
+      exit 0
+      ;;
+    *)
+      echo "Unknown option: $1"
+      print_help
+      exit 1
+      ;;
+  esac
+done
+
+echo "Apiosk Wallet Setup (address only)"
 echo ""
 
-# Create directory
 mkdir -p "$WALLET_DIR"
 
-# Check if wallet exists
-if [ -f "$WALLET_FILE" ] && [ "$1" != "--regenerate" ]; then
-  echo "❌ Wallet already exists at $WALLET_FILE"
-  echo "Use --regenerate to create a new wallet (WARNING: old wallet will be lost!)"
+if [[ -f "$WALLET_TXT" && "$FORCE" != "true" ]]; then
+  echo "Wallet already exists at $WALLET_TXT"
+  echo "Use --force to replace it."
   exit 1
 fi
 
-# Generate wallet using cast (Foundry)
-if ! command -v cast &> /dev/null; then
-  echo ""
-  echo "❌ 'cast' not found. Foundry is required to generate wallets."
-  echo ""
-  echo "To install Foundry, run:"
-  echo "  curl -L https://foundry.paradigm.xyz | bash"
-  echo "  foundryup"
-  echo ""
-  echo "Or visit: https://book.getfoundry.sh/getting-started/installation"
-  echo ""
+if [[ -z "$ADDRESS" ]]; then
+  read -r -p "Enter wallet address (0x...): " ADDRESS
+fi
+
+if ! validate_wallet "$ADDRESS"; then
+  echo "Error: invalid wallet address format."
   exit 1
 fi
 
-echo "Generating new wallet..."
-WALLET_OUTPUT=$(cast wallet new)
-ADDRESS=$(echo "$WALLET_OUTPUT" | grep "Address:" | awk '{print $2}')
-PRIVATE_KEY=$(echo "$WALLET_OUTPUT" | grep "Private key:" | awk '{print $3}')
+printf '%s\n' "$ADDRESS" > "$WALLET_TXT"
+chmod 600 "$WALLET_TXT"
 
-# Save wallet
-cat > "$WALLET_FILE" << EOF
-{
-  "address": "$ADDRESS",
-  "private_key": "$PRIVATE_KEY",
-  "created_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-}
-EOF
-
-chmod 600 "$WALLET_FILE"
-
-# Create config
 cat > "$CONFIG_FILE" << EOF
 {
   "rpc_url": "https://mainnet.base.org",
@@ -63,19 +79,13 @@ cat > "$CONFIG_FILE" << EOF
 EOF
 
 echo ""
-echo "✅ Wallet created successfully!"
+echo "Wallet address saved."
+echo "Address: $ADDRESS"
+echo "File: $WALLET_TXT"
 echo ""
-echo "📍 Address: $ADDRESS"
-echo "📂 Saved to: $WALLET_FILE"
+echo "No signing key material is stored by this skill."
 echo ""
-echo "⚠️  IMPORTANT: Fund your wallet with USDC on Base mainnet"
-echo ""
-echo "How to fund:"
-echo "  1. Bridge USDC to Base: https://bridge.base.org"
-echo "  2. Or buy on Coinbase → Withdraw to Base"
-echo "  3. Send to: $ADDRESS"
-echo ""
-echo "Minimum recommended: $1-10 USDC"
+echo "Fund your wallet with USDC on Base:"
+echo "  https://bridge.base.org"
 echo ""
 echo "Check balance: ./check-balance.sh"
-echo ""

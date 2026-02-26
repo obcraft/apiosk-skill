@@ -8,17 +8,23 @@ import json
 import requests
 from pathlib import Path
 
-WALLET_FILE = Path.home() / '.apiosk' / 'wallet.json'
+WALLET_TXT = Path.home() / '.apiosk' / 'wallet.txt'
+WALLET_JSON = Path.home() / '.apiosk' / 'wallet.json'
 CONFIG_FILE = Path.home() / '.apiosk' / 'config.json'
 
 
 def load_wallet():
     """Load wallet configuration"""
-    if not WALLET_FILE.exists():
+    address = os.getenv('APIOSK_WALLET_ADDRESS', '').strip()
+    if not address and WALLET_TXT.exists():
+        address = WALLET_TXT.read_text().strip()
+    if not address and WALLET_JSON.exists():
+        with open(WALLET_JSON) as f:
+            address = json.load(f).get('address', '').strip()
+    if not address:
         raise FileNotFoundError('Wallet not found. Run ./setup-wallet.sh first')
-    
-    with open(WALLET_FILE) as f:
-        wallet = json.load(f)
+
+    wallet = {'address': address}
     
     with open(CONFIG_FILE) as f:
         config = json.load(f)

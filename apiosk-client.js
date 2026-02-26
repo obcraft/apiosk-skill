@@ -7,18 +7,30 @@ const fs = require('fs');
 const path = require('path');
 const https = require('https');
 
-const WALLET_FILE = path.join(process.env.HOME, '.apiosk', 'wallet.json');
+const WALLET_TXT = path.join(process.env.HOME, '.apiosk', 'wallet.txt');
+const WALLET_JSON = path.join(process.env.HOME, '.apiosk', 'wallet.json');
 const CONFIG_FILE = path.join(process.env.HOME, '.apiosk', 'config.json');
 
 /**
  * Load wallet configuration
  */
 function loadWallet() {
-  if (!fs.existsSync(WALLET_FILE)) {
+  let address = (process.env.APIOSK_WALLET_ADDRESS || '').trim();
+
+  if (!address && fs.existsSync(WALLET_TXT)) {
+    address = fs.readFileSync(WALLET_TXT, 'utf8').trim();
+  }
+
+  if (!address && fs.existsSync(WALLET_JSON)) {
+    const parsed = JSON.parse(fs.readFileSync(WALLET_JSON, 'utf8'));
+    address = (parsed.address || '').trim();
+  }
+
+  if (!address) {
     throw new Error('Wallet not found. Run ./setup-wallet.sh first');
   }
-  
-  const wallet = JSON.parse(fs.readFileSync(WALLET_FILE, 'utf8'));
+
+  const wallet = { address };
   const config = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
   
   return { wallet, config };

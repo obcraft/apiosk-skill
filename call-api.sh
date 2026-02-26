@@ -2,9 +2,10 @@
 # Call any Apiosk API and surface x402 payment challenges
 # Usage: ./call-api.sh <api-id> --params '{"key":"value"}'
 
-set -e
+set -euo pipefail
 
-WALLET_FILE="$HOME/.apiosk/wallet.json"
+WALLET_TXT="$HOME/.apiosk/wallet.txt"
+WALLET_JSON="$HOME/.apiosk/wallet.json"
 CONFIG_FILE="$HOME/.apiosk/config.json"
 
 # Check arguments
@@ -24,13 +25,21 @@ fi
 shift
 PARAMS=$1
 
-# Load wallet
-if [ ! -f "$WALLET_FILE" ]; then
+# Load wallet address
+if [[ -f "$WALLET_TXT" ]]; then
+  WALLET_ADDRESS="$(tr -d '[:space:]' < "$WALLET_TXT")"
+elif [[ -f "$WALLET_JSON" ]]; then
+  WALLET_ADDRESS="$(jq -r '.address // empty' "$WALLET_JSON")"
+else
   echo "❌ Wallet not found. Run ./setup-wallet.sh first"
   exit 1
 fi
 
-WALLET_ADDRESS=$(jq -r '.address' "$WALLET_FILE")
+if [[ -z "$WALLET_ADDRESS" ]]; then
+  echo "❌ Wallet address is empty"
+  exit 1
+fi
+
 GATEWAY_URL=$(jq -r '.gateway_url' "$CONFIG_FILE")
 
 # Make request
